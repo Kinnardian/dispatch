@@ -130,12 +130,12 @@
 
 
 (def dispatch (req)
-  (iflet hand (findpath req!path)
-    (if (alist hand)  ; true if complex path
-      (apply hand.0 (cons req hand.1))
-      (hand req))
+  (iflet handler (findpath req!path)
+    (if (alist handler)  ; true if complex path
+      (apply handler.0 (cons req handler.1))
+      (handler req))
     (resp-err)))
 
-(= httpd-handler dispatch)  ; the right choice for 95% of cases, but
+; (= httpd-handler dispatch)  ; the right choice for 95% of cases, but
 ; for instance you might want to use a unique session cookie for each
 ; visitor, in this case, do some "Cookie" header parsing before to dispatch.

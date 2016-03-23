@@ -1,5 +1,4 @@
 ;;; http.arc: dealing with the HTTP protocol
-(load "./server/stones/dispatch.arc")
 
 (deftem http-msg
   prot  nil     ; protocol  "HTTP/1.1"
@@ -94,18 +93,17 @@
 (= httpd-hds*    (obj Server        "http.arc"
                       Content-Type  "text/html"  ; set encoding in your HTML
                       Connection    "closed")
-   stop-httpd*    nil
-   httpd-handler  nil)  ; ** the function your web app has to define **
+   
+   httpd-handler  dispatch)  ; ** the function your web app has to define **
 
 (def httpd-serve ((o port 8080))
   (w/socket s port
-    (until stop-httpd*
+    (until killserver*
       (let (in out ip) (socket-accept s)
         (thread:handle-req in out ip))))
   (prn "httpd done"))
 
 (def handle-req (in out ip)
-  (err "handling req")
   (after
     (let req (read-req in)
       (= req!ip ip)  ; TODO: check and use X-Real-IP
@@ -120,9 +118,13 @@
       (= req!args (join req!args (parse-args:string (map [coerce _ 'char] req!body)))))))
 
 (def start-httpd ((o port 8080))
-  (wipe stop-httpd*)
+  (wipe killserver*)
   (prn "httpd: serving on port " port)
   (thread:httpd-serve port))
+
+(def stop-httpd ()
+  (= killserver* t)
+)
 
 
 ;; Very basic HTTP client.  still a work in progress: incomplete/ugly
