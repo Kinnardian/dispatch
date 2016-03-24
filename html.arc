@@ -27,7 +27,7 @@
   (tag (label for name) (pr label))
   (gentag input type typ  id name  name name  value val  size sz))
 
-(def render (view, (o parameters))(
+(def render (view (o parameters))(
 
   (prn "I was asked to render this view: " view)
 )
