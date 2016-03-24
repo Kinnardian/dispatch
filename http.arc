@@ -120,7 +120,7 @@
 (def start-httpd ((o port 8080))
   (wipe killserver*)
   (prn "httpd: serving on port " port)
-  (thread:httpd-serve port))
+  (httpd-serve port))
 
 (def stop-httpd ()
   (= killserver* t)
