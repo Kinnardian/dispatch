@@ -97,6 +97,7 @@
    httpd-handler  dispatch)  ; ** the function your web app has to define **
 
 (def httpd-serve ((o port 8080))
+  (prn "bout to start listenin")
   (w/socket s port
     (until killserver*
       (let (in out ip) (socket-accept s)
@@ -120,7 +121,7 @@
 (def start-httpd ((o port 8080))
   (wipe killserver*)
   (prn "httpd: serving on port " port)
-  (thread:httpd-serve port))
+  (httpd-serve port))
 
 (def stop-httpd ()
   (= killserver* t)
