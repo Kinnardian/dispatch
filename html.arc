@@ -1,3 +1,4 @@
+; Epigraphy — arc-language HTML Templating Engine
 ; we use HTML5.  that means, less cruft (things like closing </html> or
 ; type="text/javascript" not mandatory, so skipped to save bandwidth)
 ; but don't worry old browsers will still be able to handle it (IE6 does!)
@@ -25,3 +26,11 @@
 (def lblinp (label name (o typ "text") (o val) (o sz 12))
   (tag (label for name) (pr label))
   (gentag input type typ  id name  name name  value val  size sz))
+
+(def render (view, (o parameters))(
+
+  (prn "I was asked to render this view: " view)
+)
+)
+
+(render "CartoonWorld")
