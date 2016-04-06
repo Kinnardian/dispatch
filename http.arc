@@ -2,7 +2,7 @@
 
 (deftem http-msg
   prot  nil     ; protocol  "HTTP/1.1"
-  hds   nil)    ; headers   (("Content-Type" "html") ("Location" "/new"))
+  headers   nil)    ; headers   (("Content-Type" "html") ("Location" "/new"))
 
 ; A "request" is a message from the client to the server
 
@@ -42,10 +42,10 @@
 (def read-req ((o from (stdin)))
   (withs ((m pa pro) (read-reqline from)
           (rpa qs)   (tokens pa #\?)
-          hds        (read-headers from))
+          headers        (read-headers from))
     (inst 'http-req  'prot pro  'meth (sym:downcase m)
-                     'path rpa  'qs qs   'hds hds
-                     'cooks (parse-cooks hds)
+                     'path rpa  'qs qs   'headers headers
+                     'cooks (parse-cooks headers)
                      'args (only.parse-args qs))))
 
 (def read-reqline ((o from (stdin)))  (tokens:readline from))
@@ -53,36 +53,36 @@
 (def parse-args (argstr)  ; "foo=bar&baz=42" -> (("foo" "bar") ("baz" "42"))
   (map [map urldecode (tokens _ #\=)] (tokens argstr #\&)))
 
-(def parse-cooks (reqhds)
+(def parse-cooks (reqheaders)
   (reduce join
     (map [map [tokens (trim _) #\=] (tokens _.1 #\;)]
-         (keep [caris _ "Cookie"] reqhds))))
+         (keep [caris _ "Cookie"] reqheaders))))
 
 (def read-resp ((o from (stdin)))
   (let (pro st . reas) (tokens (readline from))
     (inst 'http-resp 'prot pro  'sta (int st)
                      'rea (string:intersperse " " reas)
-                     'hds (read-headers from))))
+                     'headers (read-headers from))))
 
-(def pr-headers (hds)
-  (each (n v) hds  (prrn n ": " v))
+(def pr-headers (headers)
+  (each (n v) headers  (prrn n ": " v))
   (prrn))
 
 ; we call "head" the top part of an HTTP message,
 ; i.e: the status or request line plus the headers
 
-(def reqhead (meth path hds)
+(def reqhead (meth path headers)
   (prrn upcase.meth " " path " HTTP/1.0")
   ; 1.0 because a 1.1 client should be able to deal with
   ; "Transfert-Encoding: chunked" (and we don't, at least yet)
-  (pr-headers hds))
+  (pr-headers headers))
 
-(def resphead ((o sta http-ok+) (o hds httpd-hds*))
+(def resphead ((o sta http-ok+) (o headers httpd-headers*))
   (prrn "HTTP/1.1 " sta)
-  (pr-headers hds))
+  (pr-headers headers))
 
-(def redirect (loc (o sta http-found+) (o hds httpd-hds*))
-  (resphead sta (copy hds 'Location loc)))
+(def redirect (loc (o sta http-found+) (o headers httpd-headers*))
+  (resphead sta (copy headers 'Location loc)))
 
 
 ;; httpd: generic HTTP server.
@@ -90,9 +90,9 @@
 ; doesn't deal with logging, gzipping, slow and bad clients,
 ; keep-alive, limits of req/<time>: nginx can do it for us
 
-(= httpd-hds*    (obj Server        "http.arc"
+(= httpd-headers*    (obj Server        "quarry-server"
                       Content-Type  "text/html"  ; set encoding in your HTML
-                      Connection    "closed")
+                      Connection    "keep-alive")
    
    httpd-handler  dispatch)  ; ** the function your web app has to define **
 
@@ -113,9 +113,9 @@
     (close in out)))
 
 (def read-body (req (o from (stdin)))
-  (awhen (aand (alref req!hds "Content-Length") (errsafe:int it))
+  (awhen (aand (alref req!headers "Content-Length") (errsafe:int it))
     (= req!body (readbytes it from))
-    (when (posmatch "x-www-form-urlencoded" (alref req!hds "Content-Type"))
+    (when (posmatch "x-www-form-urlencoded" (alref req!headers "Content-Type"))
       (= req!args (join req!args (parse-args:string (map [coerce _ 'char] req!body)))))))
 
 (def start-httpd ((o port 8080))
@@ -147,10 +147,10 @@
          host (cut host 0 it)))
     (list prot host port path)))
 
-(def mk-http-req (method host path (o hds) (o port 80) (o body))
+(def mk-http-req (method host path (o headers) (o port 80) (o body))
   (let (in out) (socket-connect host port)
     (w/stdout out
-      (reqhead (upcase method) path hds)
+      (reqhead (upcase method) path headers)
       (prt body)
       (flushout))
     (after (list (read-resp in) in)
@@ -183,7 +183,7 @@
 ;
 ; * deal with user@pwd in 'parse-url
 ;
-; * actually wrong to use a table for httpd-hds*: it's legal to use the
+; * actually wrong to use a table for httpd-headers*: it's legal to use the
 ; same header twice.  normally should be not break to change to an assoc
 ; list ('pr-headers would still work).  should make it.
 ;

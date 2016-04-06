@@ -93,11 +93,11 @@
 ;; Misc utils
 
 (def resp-err ((o msg "404 - Not found") (o sta http-notfound+))
-  (resphead sta (copy httpd-hds* "Content-Type" "text/plain"))
+  (resphead sta (copy httpd-headers* "Content-Type" "text/plain"))
   (prn msg))
 
 (defs arg  (req argname)   (alref req!args argname)
-      hd   (req hdname)    (alref req!hds hdname)
+      hd   (req hdname)    (alref req!headers hdname)
       cook (req cookname)  (alref req!cooks cookname))
 
 
