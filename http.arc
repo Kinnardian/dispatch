@@ -40,11 +40,11 @@
   (string:intersperse #\- (map capitalize (tokens name #\-))))
 
 (def read-req ((o from (stdin)))
-  (withs ((m pa pro) (read-reqline from)
-          (rpa qs)   (tokens pa #\?)
+  (withs ((mthd path prtcl) (read-reqline from)
+          (respath qs)   (tokens path #\?)
           headers        (read-headers from))
-    (inst 'http-req  'prot pro  'meth (sym:downcase m)
-                     'path rpa  'qs qs   'headers headers
+    (inst 'http-req  'prot prtcl  'meth (sym:downcase mthd)
+                     'path respath  'qs qs   'headers headers
                      'cooks (parse-cooks headers)
                      'args (only.parse-args qs))))
 
