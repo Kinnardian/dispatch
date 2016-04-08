@@ -39,7 +39,7 @@
 (def normalize-hdname (name)  ; "content-type" -> "Content-Type"
   (string:intersperse #\- (map capitalize (tokens name #\-))))
 
-(def read-req ((o from (stdin)))
+(def read-req-head ((o from (stdin)))
   (withs ((mthd path prtcl) (read-reqline from)
           (respath qs)   (tokens path #\?)
           headers        (read-headers from))
@@ -106,13 +106,13 @@
 
 (def handle-req (in out ip)
   (after
-    (let req (read-req in)
+    (let req (read-req-head in)
       (= req!ip ip)  ; TODO: check and use X-Real-IP
-      (read-body req in)
+      (read-req-body req in)
       (w/stdout out (httpd-handler req)))
     (close in out)))
 
-(def read-body (req (o from (stdin)))
+(def read-req-body (req (o from (stdin)))
   (awhen (aand (alref req!headers "Content-Length") (errsafe:int it))
     (= req!body (readbytes it from))
     (when (posmatch "x-www-form-urlencoded" (alref req!headers "Content-Type"))
